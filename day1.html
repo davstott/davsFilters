@@ -1,0 +1,166 @@
+<body>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/prototype/1.7.0.0/prototype.js"></script>
+
+
+<canvas id="worldCanvas" style="z-index:1;"></canvas>
+<canvas id="robotCanvas" style="position:absolute; z-index:2;"></canvas>
+
+<script type="text/javascript">
+    
+    function randomInt(from, to)  {  
+      return from + Math.floor(Math.random() * (to - from + 1));  
+    }  
+    function random(from, to)  {  
+      return from + (Math.random() * (to - from + 1));  
+    }  
+
+    function noisify(x) {
+      return (x * random(0.8, 1.2));
+
+    }
+
+    var Particle = function() {
+        this.x = 0;
+        this.y = 0;
+    }
+
+    var World = function(mapImage) {
+        this.c = $('worldCanvas');
+        this.rc = $('robotCanvas');
+        this.ctx = this.c.getContext('2d');
+        this.mapImg = new Image();
+        // need to delay this event binding until after the prototype's been initialised
+        this.mapImg.onload = this.init.bind(this);
+        this.mapImg.src = mapImage;
+    }
+    World.prototype = {
+        init: function() {
+            this.c.height = this.rc.height = this.mapImg.height;
+            this.c.width = this.rc.width = this.mapImg.width;
+            this.rc.style.top = this.c.offsetTop + 'px';
+            this.rc.style.left = this.c.offsetLeft + 'px';
+            this.draw();
+            this.imgData = this.ctx.getImageData(0, 0, this.c.width, this.c.height);
+            this.robot = new Robot(randomInt(0, this.c.width),
+                                   randomInt(0, this.c.height),
+                                   random(0, 2 * Math.PI));
+            this.robot.draw();
+        },
+
+        draw: function() {
+            this.ctx.clearRect(0, 0, this.c.width, this.c.height);
+            this.ctx.drawImage(this.mapImg, 0, 0);
+        },
+
+        isInWorld: function(x, y) {
+            return (0 < x && x < this.c.width) && (0 < y && y < this.c.height);
+        },
+
+        isOccupied: function(x, y) {
+            // maybe make this 2d
+            // expanded these into variables to make life easier in the local watches
+            //            var d = this.ctx.getImageData(x, y, 1, 1);
+            var i = ((this.c.width * y) + x) * 4;
+            var r = this.imgData.data[i];
+            var g = this.imgData.data[i + 1];
+            var b = this.imgData.data[i + 2];
+            var a = this.imgData.data[i + 3];
+            return (r + g + b) < (3 * 50);
+        }
+    };
+
+    var Robot = function(x, y, h) {
+        this.x = x;
+        this.y = y;
+        this.h = h;
+        this.rctx = world.rc.getContext('2d');
+        this.drawSize = 5;
+        this.moveSize = 10;
+        this.moveHistory = [[x,y]];
+    }
+
+    Robot.prototype = {
+        moveto: function(x, y, h) {
+            //fooo
+            this.x = x;
+            this.y = y;
+            this.h = h;
+            this.moveHistory.push([x,y]);
+            //$('x').value = this.x;
+            //$('y').value = this.y;
+            //$('h').value = this.h;
+            this.draw();
+        },
+
+        draw: function() {
+            // whut, turtle graphics again?
+            this.rctx.clearRect(0, 0, world.width, world.height);
+            this.rctx.strokeStyle = '#00ff00';
+            this.rctx.lineWidth = 2;
+            this.rctx.beginPath(); 
+            // todo: make this a triangle that faces in direction h
+            this.rctx.moveTo(this.x, this.y);
+            this.rctx.lineTo(this.x + this.drawSize, this.y);
+            this.rctx.lineTo(this.x + this.drawSize, this.y + this.drawSize);
+            this.rctx.lineTo(this.x, this.y + this.drawSize);
+            this.rctx.lineTo(this.x, this.y);
+            this.rctx.stroke();
+            this.rctx.closePath(); 
+            this.rctx.strokeStyle = '#999999';
+            this.rctx.lineWidth = 1;
+            this.rctx.beginPath();
+            $('t').value = ''             
+            for (var i = 0; i < this.moveHistory.length; i++) {
+              c = this.moveHistory[i];
+              $('t').value = $('t').value + 'x = ' + c[0] + ', y = ' + c[1] + '\r\n';
+              this.rctx.lineTo(c[0], c[1]);
+ 
+            }
+            this.rctx.stroke();
+            this.rctx.closePath();
+        },
+
+        randomMove: function() {
+            var valid = false;
+            var newX = 0;
+            var newY = 0;
+            var newH = this.h;
+            var i = 0
+            while (!valid) {
+                newH += randomInt(-0.5 * Math.PI, Math.PI / 2); 
+                newX = Math.floor(noisify(this.moveSize) * Math.cos(newH) + this.x);
+                newY = Math.floor(noisify(this.moveSize) * Math.sin(newH) + this.y);
+                // todo: replace this with a new function, isPathClear()
+                valid = world.isInWorld(newX, newY) && !world.isOccupied(newX, newY);
+                i++;
+                if (i == 10) {
+                   alert('the robot crashed. Kryten must have washed its circuits');
+                   break;
+                }
+            }
+            var dx = newX - this.x;
+            var dy = newY - this.y;
+            this.moveto(newX, newY, newH);
+            return [dx, dy, newH];
+        }
+    }
+</script>
+<a href="http://www.claudeonthe.net/ai/particle_filter/particle_filter.html">the answer</a><br>
+<script type="text/javascript">
+    world = new World('https://davstott.me.uk/dav/map2.gif');
+    function go() {
+      newPos =  world.robot.randomMove();
+      $('x').value = newPos[0]; 
+      $('y').value = newPos[1];
+      $('h').value = newPos[2];
+    }
+</script>
+<form>
+x <input type="text" id="x" name="x"> <br/>
+y <input type="text" id="y" name="y"> <br/>
+h <input type="text" id="h" name="h"> <br/>
+<textarea name="t" id="t"></textarea>
+</form>
+</body>
+<button onclick="go()">handles!</button>
+
