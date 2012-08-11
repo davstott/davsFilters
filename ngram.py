@@ -6,16 +6,26 @@ lastword = ""
 currentcount = 0
 maxbatchsize = 100
 wordcount = 0
+gramcount = 0
 myGrams = dict()
 starttime = time.time()
 print starttime
 
+# todo: work out how to normalise for word frequency in a single pass
+# it's easy if you store the grams by word then do another loop to assemble them
+# todo: try to work out if markov chain maths applies 
+# or the cheaty way of normalising Bayes at the end rather than as you go
+# todo: work out how to use the frequency of a word appearing after another word
+# it's a step in the wrong direction for language detection, but would be useful in the model for word unshredding
+
 def addNgram(thisGram):
+  global gramcount, myGrams
   thisGram = thisGram.lower()
+  gramcount = gramcount + 1
   if (thisGram not in myGrams):
-    myGrams[thisGram] = 1
+    myGrams[thisGram] = [1,0]
   else:
-    myGrams[thisGram] = myGrams[thisGram] + 1
+    myGrams[thisGram][0] = myGrams[thisGram][0] + 1
 
 
 def ngramify(word):
@@ -53,4 +63,10 @@ for thisLine in fileinput.input(filelist):
           #report time
           print ("processed " + str(wordcount) + " words in " + str(time.time() - starttime) + " seconds = " + str(wordcount / (time.time() - starttime)) + " words per second")
 
+# this seems like a job for map(fn, thisGram)
+for thisGram in myGrams:
+  myGrams[thisGram][1] = myGrams[thisGram][0] / gramcount;
+
 print myGrams
+print ("total grams: " + str(gramcount))
+print ("total words: " + str(wordcount))
