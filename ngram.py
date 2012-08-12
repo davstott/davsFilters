@@ -34,15 +34,9 @@ def ngramify(word):
   if (len(word) < 2):
     return None
   for i in range(0, len(word)):
-    # 2 grams
-    if (i + 2 <= len(word)):
-      addNgram(word[i:i+2])
-    # 3 grams
-    if (i + 3 <= len(word)):
-      addNgram(word[i:i+3])
-   # 4 grams
-    if (i + 4 <= len(word)):
-      addNgram(word[i:i+4])
+    for j in range(2,4):    
+      if (i + j <= len(word)):
+        addNgram(word[i:i+j])
 
 # I bet redis is fast enough to use directly instead of the myGrams dict
 
@@ -68,7 +62,7 @@ for thisLine in fileinput.input(filelist):
 
 # this seems like a job for map(fn, thisGram)
 for thisGram in myGrams:
-  myGrams[thisGram][1] = myGrams[thisGram][0] / gramcount;
+  myGrams[thisGram][1] = myGrams[thisGram][0] / float(gramcount);
   r.set(thisGram, myGrams[thisGram][1])
 
 #print myGrams

@@ -1,3 +1,9 @@
 Dav's initial wanderings after the Intro to AI course, finally put into a repos to keep things tidy and sensible. Expect incomplete randomness.
 
 It feels possible to use less ram with the merge sort
+
+The ngram code is starting to come together a little bit, although I've only trained it with one of Google's files so far. Using 2-grams doesn't give much contrast between English and French, but limiting it to 3 and 4 does better
+
+echo "the queen sometimes likes pie" | python ngramQuery.py
+echo "en mon vacance, je m'apelle Dav" | python ngramQuery.py
+
