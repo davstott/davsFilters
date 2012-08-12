@@ -1,15 +1,17 @@
-import fileinput, time, re
+import fileinput, time, re, redis
 filelist = "/var/tmp/googlebooks-eng-all-1gram-20090715-7.csv"
 #filelist = "/var/tmp/smalllist.csv"
 #filelist = "/var/tmp/verysmalllist.csv"
 lastword = ""
 currentcount = 0
-maxbatchsize = 100
+maxbatchsize = 1000
 wordcount = 0
 gramcount = 0
 myGrams = dict()
 starttime = time.time()
 print starttime
+
+r = redis.Redis("localhost")
 
 # todo: work out how to normalise for word frequency in a single pass
 # it's easy if you store the grams by word then do another loop to assemble them
@@ -42,6 +44,7 @@ def ngramify(word):
     if (i + 4 <= len(word)):
       addNgram(word[i:i+4])
 
+# I bet redis is fast enough to use directly instead of the myGrams dict
 
 for thisLine in fileinput.input(filelist):
   bits = thisLine.split("\t")
@@ -66,7 +69,11 @@ for thisLine in fileinput.input(filelist):
 # this seems like a job for map(fn, thisGram)
 for thisGram in myGrams:
   myGrams[thisGram][1] = myGrams[thisGram][0] / gramcount;
+  r.set(thisGram, myGrams[thisGram][1])
 
-print myGrams
+#print myGrams
 print ("total grams: " + str(gramcount))
 print ("total words: " + str(wordcount))
+#gets set to 0 beforehand if it's not defiend
+r.incr("totalGrams", gramcount)
+r.incr("totalWords", wordcount)
