@@ -7,3 +7,7 @@ The ngram code is starting to come together a little bit, although I've only tra
 echo "the queen sometimes likes pie" | python ngramQuery.py
 echo "en mon vacance, je m'apelle Dav" | python ngramQuery.py
 
+
+charCountGraph.py filename1 filename2 ... filenameN
+  uses matplotlib to overlay line graphs of the character frequencies in a list of filenames or a single standard input.  Useful to compare between languages.
+
