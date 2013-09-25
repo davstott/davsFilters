@@ -11,3 +11,9 @@ echo "en mon vacance, je m'apelle Dav" | python ngramQuery.py
 charCountGraph.py filename1 filename2 ... filenameN
   uses matplotlib to overlay line graphs of the character frequencies in a list of filenames or a single standard input.  Useful to compare between languages.
 
+charFreqCreate.py
+  reads the data files englishFreqs and otherFreqs and creates a python structure containing letter frequencies by language, stored in the data file pickledCharFreqs
+
+charFreqCount.py filename1 filename2
+  using the letter frequency counts stored in pickledCharFreqs, reads all the data from all the filenames specified and returns a relative probability score for each language. 
+  The scores are not in any particular units (well, technically natural log postieror probabilities) so just use the numbers to sort the language names, but a higher number means a greater likelihood that the provided text matches any particular language.
