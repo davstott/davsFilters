@@ -1,12 +1,17 @@
-import fileinput, time, re, redis
-filelist = "/var/tmp/googlebooks-eng-all-1gram-20090715-7.csv"
+import fileinput, time, re, redis, sys
+
+if (len(sys.argv) != 2):
+  print "usage " + sys.argv[0] + " filename"
+  exit(1)
+
+filelist = sys.argv[1]
 #filelist = "/var/tmp/smalllist.csv"
 #filelist = "/var/tmp/verysmalllist.csv"
 lastword = ""
 currentcount = 0
 maxbatchsize = 1000
 wordcount = 0
-gramcount = 0
+gramcount = {}
 myGrams = dict()
 starttime = time.time()
 print starttime
@@ -23,7 +28,11 @@ r = redis.Redis("localhost")
 def addNgram(thisGram):
   global gramcount, myGrams
   thisGram = thisGram.lower()
-  gramcount = gramcount + 1
+  if (len(thisGram) in gramcount):
+    gramcount[len(thisGram)] = gramcount[len(thisGram)] + 1
+  else:
+    gramcount[len(thisGram)] = 1
+
   if (thisGram not in myGrams):
     myGrams[thisGram] = [1,0]
   else:
@@ -62,12 +71,19 @@ for thisLine in fileinput.input(filelist):
 
 # this seems like a job for map(fn, thisGram)
 for thisGram in myGrams:
-  myGrams[thisGram][1] = myGrams[thisGram][0] / float(gramcount);
-  r.set(thisGram, myGrams[thisGram][1])
+  r.incr(thisGram, myGrams[thisGram][0])
+  #myGrams[thisGram][1] = myGrams[thisGram][0] / float(gramcount[len(thisGram)])
+  # todo: implement incrbyfloat in pyredis
+  #if (r.exists(thisGram)):
+  #  r.set(thisGram, float(r.get(thisGram)) + myGrams[thisGram][1])
+  #else:
+  #  r.set(thisGram, myGrams[thisGram][1])
 
 #print myGrams
 print ("total grams: " + str(gramcount))
 print ("total words: " + str(wordcount))
 #gets set to 0 beforehand if it's not defiend
-r.incr("totalGrams", gramcount)
+for thisLen in gramcount:
+  r.incr("totalGrams" + str(thisLen), gramcount[thisLen])
+
 r.incr("totalWords", wordcount)
