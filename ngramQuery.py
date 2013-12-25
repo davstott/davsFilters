@@ -2,17 +2,16 @@ import redis, sys, math
 
 #for now, it's multiply for ngrams within words and addition for words in input
 #this needs checking against how stats works
-totalProb = float(0)
 r = redis.Redis("localhost")
 
-def checkProb(word):
+def checkProb(word, gramsize):
   global r
   if (len(word) < 2):
     return float(0)
   prob = float(0)
   for i in range(0,len(word)):
     # we know about 2, 3 and 4, but 2 isn't giving much contrast
-    for j in range(2,3):
+    for j in gramsize:
       if (i + j <= len(word)):
         p = r.get(word[i:i+j])
         if p is not None:
@@ -26,11 +25,16 @@ def checkProb(word):
   else:  
     return prob   
 
-for line in sys.stdin:
+def getProb(line, gramsize):
+  totalProb = float(0)
   for word in line.split(" "):
-    thisProb = checkProb(word.lower())
-    print word + " " + str(thisProb) + "\n"
+    thisProb = checkProb(word.lower(), gramsize)
     totalProb = totalProb + thisProb
- 
-print "total: " + str(totalProb) + "\n"
+  return totalProb
+
+if __name__ == "__main__":
+  stdInTotal = float(0)
+  for line in sys.stdin:
+    stdInTotal = stdInTotal + getProb(line, (3,))
+  print "total: " + str(stdInTotal) + "\n"
 

@@ -39,6 +39,9 @@ for thisLine in fileinput.input():
     thisFound[ord(c)] += 1
     total += 1
 
+print thisFound, total
+print thisFound / total
+
 plot(thisFound, lastFileName, total)
 
 p.xlabel('byte values')
